@@ -125,7 +125,7 @@
 
   /* Product Card Hover Effect */
   .product-card {
-    @apply group cursor-pointer;
+    @apply cursor-pointer;
   }
 
   .product-card-image {
@@ -133,7 +133,11 @@
   }
 
   .product-card-image img {
-    @apply transition-transform duration-700 ease-out group-hover:scale-105;
+    @apply transition-transform duration-700 ease-out;
+  }
+  
+  .product-card:hover .product-card-image img {
+    @apply scale-105;
   }
 
   /* Elegant Link Underline */

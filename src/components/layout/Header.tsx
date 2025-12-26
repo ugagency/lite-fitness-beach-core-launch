@@ -42,7 +42,7 @@ const Header = () => {
           </nav>
 
           {/* Logo - Center */}
-          <Link to="/" className="absolute left-1/2 -translate-x-1/2">
+          <Link to="/" className="flex-shrink-0">
             <h1 className="text-lg md:text-xl font-medium tracking-luxury uppercase">
               Lite
             </h1>
