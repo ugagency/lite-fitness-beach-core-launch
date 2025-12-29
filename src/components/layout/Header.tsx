@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, ShoppingBag, Menu, X } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import liteLogo from '@/assets/lite-logo.png';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -43,9 +44,7 @@ const Header = () => {
 
           {/* Logo - Center */}
           <Link to="/" className="flex-shrink-0">
-            <h1 className="text-lg md:text-xl font-medium tracking-luxury uppercase">
-              Lite
-            </h1>
+            <img src={liteLogo} alt="Lite Fitness Beach" className="h-8 md:h-10 w-auto object-contain" />
           </Link>
 
           {/* Desktop Navigation - Right */}
