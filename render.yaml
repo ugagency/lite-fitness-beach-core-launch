@@ -1,9 +1,9 @@
 services:
-  - type: web
+  - type: static
     name: lite-fitness
-    runtime: static
     buildCommand: npm install && npm run build
-    publishDir: dist
+    staticPublishPath: dist
     routes:
       - source: /*
         destination: /index.html
+        type: rewrite
