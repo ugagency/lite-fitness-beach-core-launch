@@ -1,5 +1,5 @@
 import { LayoutDashboard, Package, ShoppingBag, Users, Settings, LogOut } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const menuItems = [
@@ -7,11 +7,18 @@ const menuItems = [
     { icon: Package, label: "Produtos", path: "/admin/products" },
     { icon: ShoppingBag, label: "Pedidos", path: "/admin/orders" },
     { icon: Users, label: "Clientes", path: "/admin/customers" },
+    { icon: Users, label: "Usuários", path: "/admin/users" },
     { icon: Settings, label: "Configurações", path: "/admin/settings" },
 ];
 
 export function Sidebar() {
     const location = useLocation();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        // Aqui você pode adicionar lógica de limpeza de token/sessão se necessário
+        navigate("/admin/login");
+    };
 
     return (
         <aside className="w-64 bg-white border-r border-border min-h-screen flex flex-col fixed left-0 top-0 z-50">
@@ -51,7 +58,10 @@ export function Sidebar() {
             </nav>
 
             <div className="p-4 mt-auto border-t border-border">
-                <button className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-destructive w-full rounded-lg hover:bg-destructive/10">
+                <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-destructive w-full rounded-lg hover:bg-destructive/10"
+                >
                     <LogOut className="w-4 h-4" />
                     Sair
                 </button>
