@@ -1,28 +1,56 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
-import { getProductById } from '@/lib/products';
 import { useCart } from '@/context/CartContext';
-import { ChevronLeft, Minus, Plus, Check } from 'lucide-react';
+import { ChevronLeft, Minus, Plus, Check, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const ProductPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addItem } = useCart();
   const { toast } = useToast();
-  
-  const product = getProductById(id || '');
-  
+
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+
+  const { data: product, isLoading } = useQuery({
+    queryKey: ['product', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-muted-foreground animate-pulse">Carregando detalhes do produto...</p>
+        </div>
+      </Layout>
+    );
+  }
 
   if (!product) {
     return (
       <Layout>
         <div className="section-padding text-center">
-          <p>Produto não encontrado</p>
+          <p className="text-xl">Produto não encontrado</p>
+          <Button variant="link" onClick={() => navigate('/')} className="mt-4">
+            Voltar para a página inicial
+          </Button>
         </div>
       </Layout>
     );
@@ -36,23 +64,35 @@ const ProductPage = () => {
   };
 
   const handleAddToCart = () => {
-    if (!selectedSize) {
+    if (!selectedSize && (product.sizes?.length ?? 0) > 0) {
       toast({
         title: 'Selecione o tamanho',
         description: 'Por favor, escolha um tamanho antes de adicionar ao carrinho.',
+        variant: "destructive"
       });
       return;
     }
-    if (!selectedColor) {
+    if (!selectedColor && (product.colors?.length ?? 0) > 0) {
       toast({
         title: 'Selecione a cor',
         description: 'Por favor, escolha uma cor antes de adicionar ao carrinho.',
+        variant: "destructive"
       });
       return;
     }
 
+    // Mapping Supabase product fields to Cart expected fields
+    const cartProduct = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.images?.[0] || '',
+      category: product.category,
+      description: product.description || '',
+    };
+
     for (let i = 0; i < quantity; i++) {
-      addItem(product, selectedSize, selectedColor);
+      addItem(cartProduct as any, selectedSize || '', selectedColor || '');
     }
 
     toast({
@@ -84,148 +124,152 @@ const ProductPage = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
             {/* Gallery */}
-            <div className="aspect-[3/4] bg-secondary overflow-hidden">
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
+            <div className="aspect-[3/4] bg-secondary overflow-hidden rounded-xl shadow-sm border border-border">
+              {product.images?.[0] ? (
+                <img
+                  src={product.images[0]}
+                  alt={product.name}
+                  className="w-full h-full object-cover transition-transform duration-700 hover:scale-110"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                  Sem Imagem
+                </div>
+              )}
             </div>
 
             {/* Product Info */}
-            <div className="lg:py-8">
+            <div className="lg:py-4">
               {/* Badges */}
               <div className="flex gap-2 mb-4">
-                {product.isNew && (
-                  <span className="bg-foreground text-background px-3 py-1 text-xs tracking-wide uppercase">
+                {product.is_new && (
+                  <span className="bg-foreground text-background px-3 py-1 text-[10px] font-bold tracking-widest uppercase rounded-full">
                     Novo
                   </span>
                 )}
-                {product.isBestSeller && (
-                  <span className="bg-primary text-primary-foreground px-3 py-1 text-xs tracking-wide uppercase">
-                    Mais Vendido
+                {product.stock > 0 && product.stock <= 5 && (
+                  <span className="bg-amber-100 text-amber-800 border border-amber-200 px-3 py-1 text-[10px] font-bold tracking-widest uppercase rounded-full">
+                    Poucas Unidades
+                  </span>
+                )}
+                {product.stock === 0 && (
+                  <span className="bg-red-100 text-red-800 border border-red-200 px-3 py-1 text-[10px] font-bold tracking-widest uppercase rounded-full">
+                    Esgotado
                   </span>
                 )}
               </div>
 
-              <h1 className="text-2xl md:text-3xl font-light tracking-tight mb-2">
+              <h1 className="text-3xl md:text-4xl font-display font-medium tracking-tight mb-2">
                 {product.name}
               </h1>
-              <p className="text-xl font-medium mb-6">{formatPrice(product.price)}</p>
-              
-              <p className="text-muted-foreground mb-8 leading-relaxed">
-                {product.description}
-              </p>
+              <p className="text-2xl font-medium mb-6 text-primary">{formatPrice(product.price)}</p>
+
+              <div className="text-muted-foreground mb-8 leading-relaxed whitespace-pre-wrap">
+                {product.description || "Inspirado na beleza das praias brasileiras, este modelo une conforto e elegância para seus treinos ou momentos de lazer."}
+              </div>
 
               {/* Color Selection */}
-              <div className="mb-6">
-                <p className="text-sm font-medium mb-3">
-                  Cor: {selectedColor || 'Selecione'}
-                </p>
-                <div className="flex gap-2">
-                  {product.colors.map(color => (
-                    <button
-                      key={color}
-                      onClick={() => setSelectedColor(color)}
-                      className={`px-4 py-2 text-sm border transition-colors ${
-                        selectedColor === color
-                          ? 'border-foreground bg-foreground text-background'
-                          : 'border-border hover:border-foreground'
-                      }`}
-                    >
-                      {color}
-                    </button>
-                  ))}
+              {product.colors && product.colors.length > 0 && (
+                <div className="mb-6">
+                  <p className="text-sm font-semibold mb-3 flex justify-between">
+                    <span>Cor:</span>
+                    <span className="text-muted-foreground font-normal">{selectedColor || 'Selecione'}</span>
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {product.colors.map((color: string) => (
+                      <button
+                        key={color}
+                        onClick={() => setSelectedColor(color)}
+                        className={`px-4 py-2 text-xs border rounded-lg transition-all ${selectedColor === color
+                            ? 'border-primary bg-primary/5 text-primary ring-1 ring-primary'
+                            : 'border-border hover:border-foreground text-muted-foreground'
+                          }`}
+                      >
+                        {color}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Size Selection */}
-              <div className="mb-6">
-                <p className="text-sm font-medium mb-3">
-                  Tamanho: {selectedSize || 'Selecione'}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {product.sizes.map(size => (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`w-12 h-12 text-sm border transition-colors ${
-                        selectedSize === size
-                          ? 'border-foreground bg-foreground text-background'
-                          : 'border-border hover:border-foreground'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
+              {product.sizes && product.sizes.length > 0 && (
+                <div className="mb-6">
+                  <p className="text-sm font-semibold mb-3 flex justify-between">
+                    <span>Tamanho:</span>
+                    <span className="text-muted-foreground font-normal">{selectedSize || 'Selecione'}</span>
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {product.sizes.map((size: string) => (
+                      <button
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        className={`w-12 h-12 text-xs font-bold border rounded-lg transition-all ${selectedSize === size
+                            ? 'border-primary bg-primary/5 text-primary ring-1 ring-primary'
+                            : 'border-border hover:border-foreground text-muted-foreground'
+                          }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Quantity */}
-              <div className="mb-8">
-                <p className="text-sm font-medium mb-3">Quantidade</p>
-                <div className="flex items-center border border-border w-fit">
+              {/* Quantity & Add to Cart Container */}
+              <div className="flex flex-col sm:flex-row gap-4 mb-8 pt-4">
+                <div className="flex items-center border border-border rounded-lg overflow-hidden h-12 w-fit">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="p-3"
+                    className="px-4 hover:bg-secondary transition-colors"
+                    disabled={product.stock === 0}
                   >
                     <Minus className="w-4 h-4" />
                   </button>
-                  <span className="px-6 text-sm">{quantity}</span>
+                  <span className="px-6 text-sm font-medium w-16 text-center">{quantity}</span>
                   <button
                     onClick={() => setQuantity(quantity + 1)}
-                    className="p-3"
+                    className="px-4 hover:bg-secondary transition-colors"
+                    disabled={product.stock === 0}
                   >
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
-              </div>
 
-              {/* Add to Cart - Desktop */}
-              <button
-                onClick={handleAddToCart}
-                className="btn-primary w-full hidden lg:block"
-              >
-                Adicionar ao carrinho
-              </button>
-
-              {/* Features */}
-              <div className="mt-12 pt-8 border-t border-border">
-                <h3 className="text-sm font-medium uppercase tracking-wide mb-4">
-                  Características
-                </h3>
-                <ul className="space-y-2">
-                  {product.features.map(feature => (
-                    <li key={feature} className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <Check className="w-4 h-4 text-primary" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
+                <button
+                  onClick={handleAddToCart}
+                  disabled={product.stock === 0}
+                  className="btn-primary h-12 px-8 flex-1 sm:flex-none disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {product.stock === 0 ? "Produto Esgotado" : "Adicionar ao carrinho"}
+                </button>
               </div>
 
               {/* Size Guide */}
-              <div className="mt-8 pt-8 border-t border-border">
-                <h3 className="text-sm font-medium uppercase tracking-wide mb-4">
-                  Guia de Tamanhos (cm)
-                </h3>
+              <div className="mt-12 pt-8 border-t border-border">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xs font-bold uppercase tracking-widest">
+                    Guia de Medidas (cm)
+                  </h3>
+                  <span className="text-[10px] text-muted-foreground">Medidas aproximadas</span>
+                </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-[11px]">
                     <thead>
-                      <tr className="border-b border-border">
+                      <tr className="border-b border-border text-muted-foreground uppercase">
                         <th className="py-2 text-left font-medium">Tamanho</th>
                         <th className="py-2 text-left font-medium">Busto</th>
                         <th className="py-2 text-left font-medium">Cintura</th>
                         <th className="py-2 text-left font-medium">Quadril</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="text-muted-foreground">
                       {sizeGuide.map(row => (
-                        <tr key={row.size} className="border-b border-border">
-                          <td className="py-2 text-muted-foreground">{row.size}</td>
-                          <td className="py-2 text-muted-foreground">{row.bust}</td>
-                          <td className="py-2 text-muted-foreground">{row.waist}</td>
-                          <td className="py-2 text-muted-foreground">{row.hip}</td>
+                        <tr key={row.size} className="border-b border-border/50 hover:bg-secondary/20 transition-colors">
+                          <td className="py-2 font-bold text-foreground">{row.size}</td>
+                          <td className="py-2">{row.bust}</td>
+                          <td className="py-2">{row.waist}</td>
+                          <td className="py-2">{row.hip}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -235,16 +279,6 @@ const ProductPage = () => {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Mobile Sticky CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4 lg:hidden z-40">
-        <button
-          onClick={handleAddToCart}
-          className="btn-primary w-full"
-        >
-          Adicionar ao carrinho · {formatPrice(product.price * quantity)}
-        </button>
       </div>
     </Layout>
   );

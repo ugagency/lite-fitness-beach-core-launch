@@ -26,21 +26,20 @@ export default function Login() {
 
             if (error) throw error;
 
-            // Check if user has admin/editor role
+            // Check if user has admin/editor/estoque role
             const { data: profile, error: profileError } = await supabase
                 .from("profiles")
                 .select("role")
                 .eq("id", data.user.id)
                 .single();
 
-            if (profileError || !profile || (profile.role !== "admin" && profile.role !== "editor")) {
-                // Log out immediately if not authorized
+            if (profileError || !profile || (profile.role !== "admin" && profile.role !== "estoque")) {
                 await supabase.auth.signOut();
-                toast.error("Acesso restrito ao painel administrativo");
+                toast.error("Acesso restrito. Sua conta não possui permissão de acesso ao painel.");
                 return;
             }
 
-            toast.success(`Bem-vindo, ${data.user.email}!`);
+            toast.success(`Bem-vindo, ${profile.role}!`);
             navigate("/admin/dashboard");
         } catch (error: any) {
             toast.error(error.message || "Senha ou e-mail inválidos");
@@ -62,7 +61,7 @@ export default function Login() {
                         Painel Administrativo
                     </CardTitle>
                     <CardDescription>
-                        Entre com suas credenciais para acessar
+                        Acesso restrito a usuários autorizados
                     </CardDescription>
                 </CardHeader>
                 <form onSubmit={handleLogin}>

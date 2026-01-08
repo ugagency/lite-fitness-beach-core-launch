@@ -20,6 +20,7 @@ import Orders from "./pages/admin/Orders";
 import Customers from "./pages/admin/Customers";
 import AdminUsers from "./pages/admin/AdminUsers";
 import Settings from "./pages/admin/Settings";
+import Profile from "./pages/admin/Profile";
 import Login from "./pages/admin/Login";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,7 @@ const App = () => (
               <Route path="customers" element={<Customers />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="profile" element={<Profile />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

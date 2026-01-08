@@ -1,22 +1,31 @@
-import { LayoutDashboard, Package, ShoppingBag, Users, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, Users, Settings, LogOut, UserCircle } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-const menuItems = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
-    { icon: Package, label: "Produtos", path: "/admin/products" },
-    { icon: ShoppingBag, label: "Pedidos", path: "/admin/orders" },
-    { icon: Users, label: "Clientes", path: "/admin/customers" },
-    { icon: Users, label: "Usuários", path: "/admin/users" },
-    { icon: Settings, label: "Configurações", path: "/admin/settings" },
-];
+interface SidebarProps {
+    userRole?: string | null;
+}
 
-export function Sidebar() {
+export function Sidebar({ userRole }: SidebarProps) {
     const location = useLocation();
     const navigate = useNavigate();
 
-    const handleLogout = () => {
-        // Aqui você pode adicionar lógica de limpeza de token/sessão se necessário
+    const menuItems = [
+        { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
+        { icon: Package, label: "Produtos", path: "/admin/products" },
+        { icon: ShoppingBag, label: "Pedidos", path: "/admin/orders" },
+        { icon: Users, label: "Clientes", path: "/admin/customers" },
+        // Only show Users tab for Admins
+        ...(userRole === "admin" ? [{ icon: Users, label: "Equipe", path: "/admin/users" }] : []),
+        { icon: UserCircle, label: "Meu Perfil", path: "/admin/profile" },
+        { icon: Settings, label: "Configurações", path: "/admin/settings" },
+    ];
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        toast.success("Logoff realizado");
         navigate("/admin/login");
     };
 
