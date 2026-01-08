@@ -2,8 +2,45 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, Filter, Eye } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
 export default function Orders() {
+    const { data: orders, isLoading } = useQuery({
+        queryKey: ["orders"],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from("orders")
+                .select("*")
+                .order("created_at", { ascending: false });
+
+            if (error) throw error;
+            return data;
+        },
+    });
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case "delivered": return "bg-green-100 text-green-800";
+            case "shipped": return "bg-blue-100 text-blue-800";
+            case "cancelled": return "bg-red-100 text-red-800";
+            default: return "bg-yellow-100 text-yellow-800";
+        }
+    };
+
+    const getStatusLabel = (status: string) => {
+        switch (status) {
+            case "delivered": return "Entregue";
+            case "shipped": return "Enviado";
+            case "cancelled": return "Cancelado";
+            case "pending": return "Pendente";
+            case "confirmed": return "Confirmado";
+            case "preparing": return "Preparando";
+            default: return status;
+        }
+    }
+
     return (
         <div className="space-y-8">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -38,57 +75,43 @@ export default function Orders() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        <TableRow>
-                            <TableCell className="font-medium">#PED-1024</TableCell>
-                            <TableCell>Maria Silva</TableCell>
-                            <TableCell>07/01/2026</TableCell>
-                            <TableCell>R$ 329,80</TableCell>
-                            <TableCell>Pix</TableCell>
-                            <TableCell>
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                    Pendente
-                                </span>
-                            </TableCell>
-                            <TableCell className="text-right">
-                                <Button size="icon" variant="ghost">
-                                    <Eye className="w-4 h-4" />
-                                </Button>
-                            </TableCell>
-                        </TableRow>
-                        <TableRow>
-                            <TableCell className="font-medium">#PED-1023</TableCell>
-                            <TableCell>Ana Costa</TableCell>
-                            <TableCell>06/01/2026</TableCell>
-                            <TableCell>R$ 199,90</TableCell>
-                            <TableCell>Cartão</TableCell>
-                            <TableCell>
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    Pago
-                                </span>
-                            </TableCell>
-                            <TableCell className="text-right">
-                                <Button size="icon" variant="ghost">
-                                    <Eye className="w-4 h-4" />
-                                </Button>
-                            </TableCell>
-                        </TableRow>
-                        <TableRow>
-                            <TableCell className="font-medium">#PED-1022</TableCell>
-                            <TableCell>Carla Dias</TableCell>
-                            <TableCell>05/01/2026</TableCell>
-                            <TableCell>R$ 540,50</TableCell>
-                            <TableCell>Cartão</TableCell>
-                            <TableCell>
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                    Enviado
-                                </span>
-                            </TableCell>
-                            <TableCell className="text-right">
-                                <Button size="icon" variant="ghost">
-                                    <Eye className="w-4 h-4" />
-                                </Button>
-                            </TableCell>
-                        </TableRow>
+                        {isLoading ? (
+                            <TableRow>
+                                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                                    Carregando pedidos...
+                                </TableCell>
+                            </TableRow>
+                        ) : orders?.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                                    Nenhum pedido encontrado.
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            orders?.map((order) => (
+                                <TableRow key={order.id}>
+                                    <TableCell className="font-medium">#{order.id.slice(0, 8)}</TableCell>
+                                    <TableCell>{order.customer_name || "Cliente sem nome"}</TableCell>
+                                    <TableCell>
+                                        {format(new Date(order.created_at), "dd/MM/yyyy")}
+                                    </TableCell>
+                                    <TableCell>
+                                        {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(order.total)}
+                                    </TableCell>
+                                    <TableCell className="capitalize">{order.payment_method?.replace("_", " ")}</TableCell>
+                                    <TableCell>
+                                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                                            {getStatusLabel(order.status)}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button size="icon" variant="ghost">
+                                            <Eye className="w-4 h-4" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
                     </TableBody>
                 </Table>
             </div>

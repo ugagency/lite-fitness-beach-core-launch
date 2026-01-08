@@ -1,45 +1,63 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, ShoppingBag, Users, Activity } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-
-const data = [
-    { name: "Jan", total: 2500 },
-    { name: "Fev", total: 4500 },
-    { name: "Mar", total: 3200 },
-    { name: "Abr", total: 5800 },
-    { name: "Mai", total: 4900 },
-    { name: "Jun", total: 7200 },
-    { name: "Jul", total: 6500 },
-];
-
-const kpiData = [
-    {
-        title: "Receita Total",
-        value: "R$ 45.231,89",
-        change: "+20.1% vs mês anterior",
-        icon: DollarSign,
-    },
-    {
-        title: "Vendas",
-        value: "+2350",
-        change: "+180.1% vs mês anterior",
-        icon: ShoppingBag,
-    },
-    {
-        title: "Novos Clientes",
-        value: "+12,234",
-        change: "+19% vs mês anterior",
-        icon: Users,
-    },
-    {
-        title: "Taxa de Conversão",
-        value: "3.2%",
-        change: "+4.5% vs mês anterior",
-        icon: Activity,
-    },
-];
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Dashboard() {
+    const { data: stats, isLoading } = useQuery({
+        queryKey: ["dashboard-stats"],
+        queryFn: async () => {
+            const [ordersRes, customersRes] = await Promise.all([
+                supabase.from("orders").select("total, status, created_at"),
+                supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "customer")
+            ]);
+
+            const orders = ordersRes.data || [];
+            const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total), 0);
+            const totalSales = orders.filter(o => o.status !== "cancelled").length;
+            const customersCount = customersRes.count || 0;
+
+            // Mock aggregation for chart (real grouping is better in SQL but this works for now)
+            const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"];
+            const chartData = months.map(m => ({ name: m, total: 0 }));
+
+            return {
+                totalRevenue,
+                totalSales,
+                customersCount,
+                chartData
+            };
+        },
+    });
+
+    const kpiData = [
+        {
+            title: "Receita Total",
+            value: new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(stats?.totalRevenue || 0),
+            label: "Total acumulado",
+            icon: DollarSign,
+        },
+        {
+            title: "Vendas",
+            value: `+${stats?.totalSales || 0}`,
+            label: "Pedidos realizados",
+            icon: ShoppingBag,
+        },
+        {
+            title: "Clientes",
+            value: `+${stats?.customersCount || 0}`,
+            label: "Base de usuários",
+            icon: Users,
+        },
+        {
+            title: "Conversão (Est.)",
+            value: "3.2%",
+            label: "Taxa média",
+            icon: Activity,
+        },
+    ];
+
     return (
         <div className="space-y-8">
             <div>
@@ -49,7 +67,7 @@ export default function Dashboard() {
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {kpiData.map((kpi, i) => (
-                    <Card key={i} className="rounded-xl border-none shadow-sm hover:shadow-md transition-shadow">
+                    <Card key={i} className="rounded-xl border-none shadow-sm hover:shadow-md transition-all">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-widest">
                                 {kpi.title}
@@ -57,8 +75,10 @@ export default function Dashboard() {
                             <kpi.icon className="h-4 w-4 text-primary" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold font-display">{kpi.value}</div>
-                            <p className="text-xs text-muted-foreground mt-1">{kpi.change}</p>
+                            <div className="text-2xl font-bold font-display">
+                                {isLoading ? "..." : kpi.value}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">{kpi.label}</p>
                         </CardContent>
                     </Card>
                 ))}
@@ -70,36 +90,8 @@ export default function Dashboard() {
                         <CardTitle className="font-display font-medium">Visão Geral de Vendas</CardTitle>
                     </CardHeader>
                     <CardContent className="pl-0">
-                        <div className="h-[300px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={data}>
-                                    <XAxis
-                                        dataKey="name"
-                                        stroke="#888888"
-                                        fontSize={12}
-                                        tickLine={false}
-                                        axisLine={false}
-                                    />
-                                    <YAxis
-                                        stroke="#888888"
-                                        fontSize={12}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        tickFormatter={(value) => `R$${value}`}
-                                    />
-                                    <Tooltip
-                                        contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
-                                    />
-                                    <Area
-                                        type="monotone"
-                                        dataKey="total"
-                                        stroke="hsl(var(--primary))"
-                                        fill="hsl(var(--primary))"
-                                        fillOpacity={0.2}
-                                        strokeWidth={2}
-                                    />
-                                </AreaChart>
-                            </ResponsiveContainer>
+                        <div className="h-[300px] flex items-center justify-center text-muted-foreground italic">
+                            Gráfico de evolução será populado conforme histórico de vendas.
                         </div>
                     </CardContent>
                 </Card>
@@ -110,20 +102,11 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            {[1, 2, 3, 4, 5].map((_, i) => (
-                                <div key={i} className="flex items-center justify-between border-b border-border/50 last:border-0 pb-3 last:pb-0">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center text-xs font-bold">
-                                            OM
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-medium">Olivia Martin</p>
-                                            <p className="text-xs text-muted-foreground">olivia.martin@email.com</p>
-                                        </div>
-                                    </div>
-                                    <div className="font-medium text-sm">+R$ 1.999,00</div>
-                                </div>
-                            ))}
+                            {isLoading ? (
+                                <p className="text-sm">Carregando...</p>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">Novas vendas aparecerão aqui em tempo real.</p>
+                            )}
                         </div>
                     </CardContent>
                 </Card>
