@@ -2,9 +2,7 @@ services:
   - type: static
     name: lite-fitness
     buildCommand: npm install && npm run build
-    staticPublishPath: dist
+    publishDir: dist
     routes:
-      - source: /assets/*
-        destination: /assets/*
       - source: /*
         destination: /index.html
