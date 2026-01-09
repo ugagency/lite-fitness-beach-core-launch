@@ -4,6 +4,7 @@ services:
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     routes:
+      - source: /assets/*
+        destination: /assets/*
       - source: /*
         destination: /index.html
-        type: rewrite
