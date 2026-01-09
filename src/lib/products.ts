@@ -30,18 +30,7 @@ export const products: Product[] = [
     features: ['Suporte médio', 'Tecido respirável', 'Alças ajustáveis', 'Sem costura lateral'],
     isBestSeller: true,
   },
-  {
-    id: '3',
-    name: 'Biquíni Minimal',
-    price: 349,
-    image: productBikini1,
-    category: 'beachwear',
-    sizes: ['PP', 'P', 'M', 'G', 'GG'],
-    colors: ['Preto', 'Nude', 'Terracota'],
-    description: 'Biquíni sofisticado com design minimalista. Tecido de alta qualidade com proteção UV.',
-    features: ['Proteção UV 50+', 'Secagem rápida', 'Forro duplo', 'Design atemporal'],
-    isNew: true,
-  },
+
   {
     id: '4',
     name: 'Short Runner',
@@ -78,18 +67,7 @@ export const products: Product[] = [
     features: ['Suporte alto', 'Design diferenciado', 'Tecido compressivo', 'Bojo removível'],
     isNew: true,
   },
-  {
-    id: '7',
-    name: 'Saída de Praia Leve',
-    price: 279,
-    image: productBikini1,
-    category: 'beachwear',
-    sizes: ['PP', 'P', 'M', 'G', 'GG'],
-    colors: ['Branco', 'Nude', 'Preto'],
-    description: 'Saída de praia em tecido leve e fluido. Elegância para o pós-praia.',
-    features: ['Tecido leve', 'Secagem rápida', 'Proteção UV', 'Versátil'],
-    isBestSeller: true,
-  },
+
   {
     id: '8',
     name: 'Conjunto Beach Tennis',
@@ -102,18 +80,7 @@ export const products: Product[] = [
     features: ['Anti-suor', 'Proteção UV', 'Bolso para bola', 'Design exclusivo'],
     isNew: true,
   },
-  {
-    id: '9',
-    name: 'Maiô Elegance',
-    price: 329,
-    image: productBikini1,
-    category: 'beachwear',
-    sizes: ['PP', 'P', 'M', 'G', 'GG'],
-    colors: ['Preto', 'Nude', 'Terracota'],
-    description: 'Maiô de uma peça com recortes estratégicos. Sofisticação para a praia ou piscina.',
-    features: ['Recortes elegantes', 'Forro duplo', 'Proteção UV 50+', 'Modelagem perfeita'],
-    isBestSeller: false,
-  },
+
   {
     id: '10',
     name: 'Bermuda Comfort',
@@ -132,6 +99,6 @@ export const getProductById = (id: string): Product | undefined => {
   return products.find(p => p.id === id);
 };
 
-export const getProductsByCategory = (category: 'fitness' | 'beachwear'): Product[] => {
+export const getProductsByCategory = (category: 'fitness'): Product[] => {
   return products.filter(p => p.category === category);
 };

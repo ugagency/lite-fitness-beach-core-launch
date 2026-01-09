@@ -12,7 +12,6 @@ const Header = () => {
   const navLinks = [
     { label: 'Novidades', href: '/categoria/novidades' },
     { label: 'Fitness', href: '/categoria/fitness' },
-    { label: 'Beachwear', href: '/categoria/beachwear' },
     { label: 'Coleções', href: '/colecoes' },
   ];
 

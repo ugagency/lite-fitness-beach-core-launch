@@ -5,7 +5,7 @@ export interface Product {
   originalPrice?: number;
   image: string;
   hoverImage?: string;
-  category: 'fitness' | 'beachwear';
+  category: 'fitness';
   sizes: string[];
   colors: string[];
   description: string;

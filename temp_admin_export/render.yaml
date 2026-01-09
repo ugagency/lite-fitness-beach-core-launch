@@ -1,0 +1,8 @@
+services:
+  - type: static
+    name: lite-fitness
+    buildCommand: npm install && npm run build
+    publishDir: dist
+    routes:
+      - source: /*
+        destination: /index.html

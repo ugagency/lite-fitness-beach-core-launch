@@ -174,8 +174,6 @@ export default function Products() {
                                         <SelectTrigger><SelectValue /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="fitness">Fitness</SelectItem>
-                                            <SelectItem value="beachwear">Moda Praia</SelectItem>
-                                            <SelectItem value="accessories">Acessórios</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -235,8 +233,6 @@ export default function Products() {
                         <SelectContent>
                             <SelectItem value="all">Todas as Categorias</SelectItem>
                             <SelectItem value="fitness">Fitness</SelectItem>
-                            <SelectItem value="beachwear">Moda Praia</SelectItem>
-                            <SelectItem value="accessories">Acessórios</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
